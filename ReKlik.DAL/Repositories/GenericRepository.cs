@@ -73,7 +73,18 @@ namespace ReKlik.DAL.Repositories
 
         public async Task SaveAsync()
         {
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                foreach (var entry in ex.Entries)
+                {
+                    entry.State = EntityState.Detached;
+                }
+                throw;
+            }
         }
 
         public async Task DeleteAsync(int id)
@@ -84,5 +95,19 @@ namespace ReKlik.DAL.Repositories
                 _dbSet.Remove(entity);
             }
         }
+        public async Task<bool> UpdateAsync(TModel model)
+        {
+            try
+            {
+                _dbSet.Update(model);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
     }
 }

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ReKlik.API.Controllers
 {
-    //[Authorize(Roles = "administrador")]
+    [Authorize(Roles = "administrador")]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
@@ -355,6 +355,96 @@ namespace ReKlik.API.Controllers
                 {
                     Status = "Error",
                     Message = $"Ocurrió un error al eliminar el usuario con ID {id}",
+                    Error = ex.Message
+                });
+            }
+        }
+
+        // En UsersController.cs
+
+        /// <summary>
+        /// Obtiene el usuario actualmente autenticado
+        /// </summary>
+        [HttpGet("me")]
+        [Authorize] // Requiere autenticación
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<UserDTO>> GetCurrentUser()
+        {
+            try
+            {
+                var user = await _userService.GetCurrentUserAsync();
+                return Ok(new
+                {
+                    Status = "Éxito",
+                    User = user
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Acceso no autorizado al obtener usuario actual");
+                return Unauthorized();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener usuario actual");
+                return StatusCode(500, new
+                {
+                    Status = "Error",
+                    Message = "Ocurrió un error al obtener el usuario actual",
+                    Error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Actualiza el usuario actualmente autenticado
+        /// </summary>
+        [HttpPut("UpdateCurrentUser")]
+        [Authorize] // Requiere autenticación
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateCurrentUser([FromBody] UserUpdateDTO userDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(new
+                {
+                    Status = "Error de validación",
+                    Errors = errors
+                });
+            }
+
+            try
+            {
+                var updatedUser = await _userService.UpdateCurrentUserAsync(userDto);
+                return Ok(new
+                {
+                    Status = "Éxito",
+                    Message = "Perfil actualizado correctamente",
+                    User = updatedUser
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Acceso no autorizado al actualizar usuario");
+                return Unauthorized();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar usuario");
+                return StatusCode(500, new
+                {
+                    Status = "Error",
+                    Message = "Ocurrió un error al actualizar el perfil",
                     Error = ex.Message
                 });
             }

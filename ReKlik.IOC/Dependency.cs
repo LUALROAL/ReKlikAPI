@@ -21,7 +21,7 @@ namespace ReKlik.IOC
             services.AddDbContext<ReKlikDbContext>(options =>
             {
                 options.UseSqlServer(configuration.GetConnectionString("cadenaSQL"));
-            });
+            }, ServiceLifetime.Scoped);
 
             // Repositorios
             services.AddScoped<IProductRepository, ProductRepository>();

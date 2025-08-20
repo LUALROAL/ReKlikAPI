@@ -24,8 +24,8 @@ namespace ReKlik.BLL.Mapping
             CreateMap<User, UserDTO>()
                 .ReverseMap();
 
-            //CreateMap<User, UserUpdateDTO>()
-            //    .ReverseMap();
+            CreateMap<User, UserUpdateDTO>()
+                .ReverseMap();
 
             CreateMap<User, UserDTO>()
             .ForMember(dest => dest.CreatedAt,

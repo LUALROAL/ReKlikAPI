@@ -14,5 +14,7 @@ namespace ReKlik.BLL.Services.Contract
         Task<IEnumerable<UserDTO>> GetUsersByTypeAsync(string userType);
         Task<UserDTO> UpdateUserAsync(int id, UserUpdateDTO userDto);
         Task<bool> DeleteUserAsync(int id);
-    }
+        Task<UserDTO> GetCurrentUserAsync(); // Nuevo método
+        Task<UserDTO> UpdateCurrentUserAsync(UserUpdateDTO userDto); // Nuevo método
+}
 }

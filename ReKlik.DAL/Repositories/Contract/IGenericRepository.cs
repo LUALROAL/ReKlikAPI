@@ -20,6 +20,7 @@ namespace ReKlik.DAL.Repositories.Contract
         Task<IEnumerable<TModel>> GetAllAsync();           // Obtener todos
         Task<TModel> GetByIdAsync(int id);                  // Buscar por ID
         Task AddAsync(TModel model);                        // Agregar entidad
+        Task<bool> UpdateAsync(TModel model); // Nuevo método async
         Task SaveAsync();                                   // Guardar cambios
         Task DeleteAsync(int id);                           // Eliminar por ID
     }
