@@ -91,10 +91,27 @@ namespace ReKlik.BLL.Services
                 if (existingUser == null)
                     throw new KeyNotFoundException("Usuario no encontrado");
 
-                // Usar enfoque más seguro para el mapeo
+                // VALIDACIÓN: Verificar si el email ya existe para otro usuario
+                if (!string.IsNullOrEmpty(userDto.Email) && userDto.Email != existingUser.Email)
+                {
+                    var userWithSameEmail = await scopedUserRepository.GetByEmailAsync(userDto.Email);
+                    if (userWithSameEmail != null && userWithSameEmail.Id != id)
+                    {
+                        throw new InvalidOperationException($"Ya existe un usuario registrado con el email: {userDto.Email}");
+                    }
+                }
+
+                // Actualizar propiedades
                 existingUser.Name = userDto.Name ?? existingUser.Name;
                 existingUser.Phone = userDto.Phone ?? existingUser.Phone;
+                existingUser.Email = userDto.Email ?? existingUser.Email;
                 // Mapear otras propiedades según sea necesario
+
+                if (!string.IsNullOrEmpty(userDto.UserType))
+                {
+                    existingUser.UserType = userDto.UserType;
+                }
+
 
                 existingUser.UpdatedAt = DateTime.UtcNow;
 

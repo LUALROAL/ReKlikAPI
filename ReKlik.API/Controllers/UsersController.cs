@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ReKlik.BLL.Services.Contract;
 using ReKlik.DTO.Responses;
@@ -402,10 +403,11 @@ namespace ReKlik.API.Controllers
         /// Actualiza el usuario actualmente autenticado
         /// </summary>
         [HttpPut("UpdateCurrentUser")]
-        [Authorize] // Requiere autenticación
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)] // Nuevo: Conflicto por email duplicado
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateCurrentUser([FromBody] UserUpdateDTO userDto)
         {
@@ -437,6 +439,37 @@ namespace ReKlik.API.Controllers
             {
                 _logger.LogWarning(ex, "Acceso no autorizado al actualizar usuario");
                 return Unauthorized();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Usuario no encontrado");
+                return NotFound(new
+                {
+                    Status = "No encontrado",
+                    Message = ex.Message
+                });
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Ya existe un usuario"))
+            {
+                _logger.LogWarning(ex, "Intento de usar email existente: {Email}", userDto.Email);
+                return Conflict(new // Código 409 Conflict
+                {
+                    Status = "Error",
+                    Message = ex.Message,
+                    Field = "email"
+                });
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("unique") == true ||
+                                              ex.InnerException?.Message?.Contains("duplicate") == true)
+            {
+                // Captura también errores de base de datos por constraint unique
+                _logger.LogWarning(ex, "Violación de constraint único en base de datos");
+                return Conflict(new
+                {
+                    Status = "Error",
+                    Message = "El correo electrónico ya está en uso por otro usuario",
+                    Field = "email"
+                });
             }
             catch (Exception ex)
             {
